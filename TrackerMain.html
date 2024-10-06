@@ -179,6 +179,12 @@ ${apiData2}`;
       });
     </script>
 
-    <button class="getNot">Get Notified Before Approach</button>
+    <button class="getNot" id="getNot">Get Notified Before Approach</button>
+    <script>
+      const butt = document.getElementById("getNot");
+      butt.addEventListener("click", () => {
+        window.location.href = `sms.html?date=${encodeURIComponent(TheDate)}`;
+      });
+    </script>
   </body>
 </html>
