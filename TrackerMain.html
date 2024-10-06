@@ -99,6 +99,7 @@
       </div>
 
       <button class="getNot" id="getNot">Get Notified Before Approach</button>
+      <button class="getNot" id="getData">Download SR Data</button>
     </div>
 
     <script>
@@ -259,6 +260,12 @@ ${apiData2}`;
       const butt = document.getElementById("getNot");
       butt.addEventListener("click", () => {
         window.location.href = `sms.html?date=${encodeURIComponent(TheDate)}`;
+      });
+      const butt2 = document.getElementById("getData");
+      butt2.addEventListener("click", () => {
+        window.location.href = `earthdata2.html?latitude=${encodeURIComponent(
+          Loclatitude
+        )}&longitude=${encodeURIComponent(Loclongitude)}`;
       });
     </script>
   </body>

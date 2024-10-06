@@ -32,8 +32,25 @@
     <div id="output"></div>
 
     <script>
-      const pixelLongitude = 77.382; // Target pixel longitude
-      const pixelLatitude = 12.42; // Target pixel latitude
+      // Extract URL parameters and trim latitude and longitude to 3 decimal places
+      const urlParams = new URLSearchParams(window.location.search);
+      let pixelLatitude = parseFloat(urlParams.get("latitude"));
+      let pixelLongitude = parseFloat(urlParams.get("longitude"));
+
+      // Trimming to 3 decimal points
+      if (!isNaN(pixelLatitude)) {
+        pixelLatitude = parseFloat(pixelLatitude.toFixed(3));
+      }
+      if (!isNaN(pixelLongitude)) {
+        pixelLongitude = parseFloat(pixelLongitude.toFixed(3));
+      }
+
+      console.log(
+        "Trimmed Latitude:",
+        pixelLatitude,
+        "Longitude:",
+        pixelLongitude
+      );
 
       // Function to check if a point is inside a bounding box
       function isPointInsideBoundingBox(lon, lat, boundingBox) {
