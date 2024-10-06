@@ -1,119 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map Location Search and Click</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Map Location Search and Click with Grid</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        #map {
-            height: 500px;
-            width: 100%;
-        }
+      #map {
+        height: 500px;
+        width: 100%;
+      }
     </style>
-</head>
-<body>
-<center>
-<h1>Search Location</h1>
-<input type="text" id="search" placeholder="Enter location" />
-<button id="searchButton">Search</button>
-<p id="output"></p>
-<div id="map"></div>
+  </head>
+  <body>
+    <center>
+      <h1>Search Location</h1>
+      <input type="text" id="search" placeholder="Enter location" />
+      <button id="searchButton">Search</button>
+      <p id="output"></p>
+      <div id="map"></div>
 
-<form id="myForm" onsubmit="submitForm(event)">
-    <input type="text" id="latitude" name="latitude" placeholder="Latitude" required readonly />
-    <input type="text" id="longitude" name="longitude" placeholder="Longitude" required readonly />
-    <button type="submit">Submit</button>
-</form>
-</center>
- 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-<script>
-    // Initialize map
-    const map = L.map('map').setView([20, 0], 2); // Default view
+      <form id="myForm" onsubmit="submitForm(event)">
+        <input
+          type="text"
+          id="latitude"
+          name="latitude"
+          placeholder="Latitude"
+          required
+          readonly
+        />
+        <input
+          type="text"
+          id="longitude"
+          name="longitude"
+          placeholder="Longitude"
+          required
+          readonly
+        />
+        <button type="submit">Submit</button>
+      </form>
+    </center>
 
-    // Add OpenStreetMap tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script>
+      // Initialize map
+      const map = L.map("map").setView([20, 0], 2); // Default view
+
+      // Add OpenStreetMap tile layer
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
-    }).addTo(map);
+      }).addTo(map);
 
-    let locationData = {}; // Variable to store latitude and longitude
-    let currentMarker; // Variable to store current marker
+      let locationData = {}; // Variable to store latitude and longitude
+      let currentMarker; // Variable to store current marker
+      let gridLayers = []; // Store grid layers to remove them later
 
-    // Function for search functionality
-    document.getElementById('searchButton').addEventListener('click', function() {
-        const searchInput = document.getElementById('search').value;
-        const geocoder = L.Control.Geocoder.nominatim();
-        geocoder.geocode(searchInput, function(results) {
+      // Function for search functionality
+      document
+        .getElementById("searchButton")
+        .addEventListener("click", function () {
+          const searchInput = document.getElementById("search").value;
+          const geocoder = L.Control.Geocoder.nominatim();
+          geocoder.geocode(searchInput, function (results) {
             if (results.length > 0) {
-                const latLng = results[0].center;
-                locationData = {
-                    latitude: latLng.lat,
-                    longitude: latLng.lng
-                };
+              const latLng = results[0].center;
+              locationData = {
+                latitude: latLng.lat,
+                longitude: latLng.lng,
+              };
 
-                // Display the coordinates
-                document.getElementById('output').innerText = 
-                    `Latitude: ${locationData.latitude.toFixed(5)}, Longitude: ${locationData.longitude.toFixed(5)}`;
+              // Display the coordinates
+              document.getElementById(
+                "output"
+              ).innerText = `Latitude: ${locationData.latitude.toFixed(
+                5
+              )}, Longitude: ${locationData.longitude.toFixed(5)}`;
 
-                // Remove existing marker if it exists
-                if (currentMarker) {
-                    map.removeLayer(currentMarker);
-                }
-
-                // Add a new marker
-                currentMarker = L.marker(latLng).addTo(map).bindPopup(`Lat: ${latLng.lat.toFixed(5)}, Lng: ${latLng.lng.toFixed(5)}`).openPopup();
-
-                // setFormValues function is called in both the search button event 
-                // and the map click event to populate the form with the selected coordinates.
-                setFormValues();
-
-                // Move the map to the location
-                map.setView(latLng, 13);
+              // Update the map with the marker and grid
+              updateMap(latLng);
             } else {
-                alert('Location not found. Please try another one.');
+              alert("Location not found. Please try another one.");
             }
+          });
         });
-    });
 
-    // Map click event
-    map.on('click', function(e) {
+      // Map click event
+      map.on("click", function (e) {
         const latLng = e.latlng;
         locationData = {
-            latitude: latLng.lat,
-            longitude: latLng.lng
+          latitude: latLng.lat,
+          longitude: latLng.lng,
         };
 
         // Display the coordinates
-        document.getElementById('output').innerText = 
-            `Latitude: ${locationData.latitude.toFixed(5)}, Longitude: ${locationData.longitude.toFixed(5)}`;
+        document.getElementById(
+          "output"
+        ).innerText = `Latitude: ${locationData.latitude.toFixed(
+          5
+        )}, Longitude: ${locationData.longitude.toFixed(5)}`;
 
+        // Update the map with the marker and grid
+        updateMap(latLng);
+      });
+
+      function updateMap(latLng) {
         // Remove existing marker if it exists
         if (currentMarker) {
-            map.removeLayer(currentMarker);
+          map.removeLayer(currentMarker);
         }
 
+        // Remove any existing grid
+        gridLayers.forEach((layer) => map.removeLayer(layer));
+        gridLayers = []; // Clear grid layers array
+
         // Add a new marker
-        currentMarker = L.marker(latLng).addTo(map).bindPopup(`Lat: ${latLng.lat.toFixed(5)}, Lng: ${latLng.lng.toFixed(5)}`).openPopup();
+        currentMarker = L.marker(latLng)
+          .addTo(map)
+          .bindPopup(
+            `Lat: ${latLng.lat.toFixed(5)}, Lng: ${latLng.lng.toFixed(5)}`
+          )
+          .openPopup();
+
+        // Create a 3x3 grid of blue rectangles around the clicked point
+        createGrid(latLng);
+
+        // Move the map to the location
+        map.setView(latLng, 13);
 
         // Set form values
         setFormValues();
-    });
+      }
 
-    function setFormValues() {
-        document.getElementById('latitude').value = locationData.latitude;
-        document.getElementById('longitude').value = locationData.longitude;
-    }
+      function createGrid(latLng) {
+        const gridSize = 0.01; // Size of the grid (degrees)
+        const lat = latLng.lat;
+        const lng = latLng.lng;
 
-    function submitForm(event) {
+        // Loop to create a 3x3 grid of rectangles
+        for (let i = -1; i <= 1; i++) {
+          for (let j = -1; j <= 1; j++) {
+            const bounds = [
+              [lat + i * gridSize, lng + j * gridSize], // Southwest corner
+              [lat + (i + 1) * gridSize, lng + (j + 1) * gridSize], // Northeast corner
+            ];
+
+            // Create a blue rectangle and add it to the map
+            const rectangle = L.rectangle(bounds, {
+              color: "blue",
+              weight: 1,
+            }).addTo(map);
+            gridLayers.push(rectangle); // Store the rectangle to remove later
+          }
+        }
+      }
+
+      function setFormValues() {
+        document.getElementById("latitude").value = locationData.latitude;
+        document.getElementById("longitude").value = locationData.longitude;
+      }
+
+      function submitForm(event) {
         event.preventDefault(); // Prevent default form submission
-        const latitude = document.getElementById('latitude').value;
-        const longitude = document.getElementById('longitude').value;
+        const latitude = document.getElementById("latitude").value;
+        const longitude = document.getElementById("longitude").value;
 
         // Redirect to demo.html with query parameters
-        window.location.href = `demo.html?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}`;
-    }
-</script>
-</body>
+        window.location.href = `demo.html?latitude=${encodeURIComponent(
+          latitude
+        )}&longitude=${encodeURIComponent(longitude)}`;
+      }
+    </script>
+  </body>
 </html>
