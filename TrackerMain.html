@@ -13,6 +13,9 @@
     </div>
 
     <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const Loclatitude = urlParams.get("latitude");
+      const Loclongitude = urlParams.get("longitude");
       let apiData1 = null;
       let apiData2 = null;
 
@@ -39,8 +42,8 @@
 
       async function mainProgram() {
         await fetchData();
-        let Loclatitude = 16.043,
-          Loclongitude = 45.703;
+        //let Loclatitude = 16.043,
+        //Loclongitude = 45.703;
 
         function parseTLE(tle) {
           const lines = tle.split("\n");
