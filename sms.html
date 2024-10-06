@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SMS Scheduler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+            input[type="tel"],
+            input[type="text"],
+            input[type="datetime-local"],
+            textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #scheduledMessages {
+            margin-top: 20px;
+        }
+        .scheduled-msg {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .delete-btn {
+            background-color: #ff4444;
+            padding: 5px 10px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Notify via SMS</h2>
+        <form id="smsForm">
+            <div class="form-group">
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" placeholder="+1234567890" required 
+                       pattern="^\+?[1-9]\d{1,14}$" 
+                       title="Please enter a valid phone number with country code">
+            </div>
+            
+            <div class="form-group">
+                <label for="message">Message:</label>
+                <textarea id="message" rows="4" maxlength="160" required></textarea>
+                <small id="charCount">Characters remaining: 160</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="scheduledTime">Schedule Time:</label>
+                <input type="datetime-local" id="scheduledTime" required>
+            </div>
+            
+            <button type="submit">Schedule SMS</button>
+        </form>
+
+        <div id="scheduledMessages">
+            <h3>Scheduled Messages</h3>
+            <div id="messageList"></div>
+        </div>
+    </div>
+
+    <script>
+        let scheduledMessages = JSON.parse(localStorage.getItem('scheduledMessages')) || [];
+        
+        // Update character count
+        document.getElementById('message').addEventListener('input', function() {
+            const remaining = 160 - this.value.length;
+            document.getElementById('charCount').textContent = `Characters remaining: ${remaining}`;
+        });
+
+        document.getElementById('smsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            scheduleMessage();
+        });
+
+        function scheduleMessage() {
+            const phone = document.getElementById('phone').value;
+            const message = document.getElementById('message').value;
+            const scheduledTime = new Date(document.getElementById('scheduledTime').value);
+
+            // Validate scheduled time
+            if (scheduledTime <= new Date()) {
+                alert('Please select a future date and time');
+                return;
+            }
+
+            // Validate phone number
+            if (!isValidPhoneNumber(phone)) {
+                alert('Please enter a valid phone number with country code');
+                return;
+            }
+
+            // Store message data
+            const messageData = {
+                phone: phone,
+                message: message,
+                scheduledTime: scheduledTime.getTime(),
+                id: Date.now()
+            };
+
+            scheduledMessages.push(messageData);
+            localStorage.setItem('scheduledMessages', JSON.stringify(scheduledMessages));
+            
+            // Set timeout to send message
+            setMessageTimeout(messageData);
+            
+            // Update display
+            updateMessageList();
+            document.getElementById('smsForm').reset();
+            document.getElementById('charCount').textContent = 'Characters remaining: 160';
+            alert('Message scheduled successfully!');
+        }
+
+        function isValidPhoneNumber(phone) {
+            const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+            return phoneRegex.test(phone);
+        }
+
+        function setMessageTimeout(messageData) {
+            const now = new Date().getTime();
+            const delay = messageData.scheduledTime - now;
+
+            setTimeout(() => {
+                sendMessage(messageData);
+            }, delay);
+        }
+
+        function sendMessage(messageData) {
+            // Make a request to your server to send the SMS
+            fetch('http://localhost:3000/send-sms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    to: messageData.phone,
+                    message: messageData.message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`SMS sent to ${messageData.phone}: ${messageData.message}`);
+                } else {
+                    alert(`Failed to send SMS: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                alert('Error sending SMS: ' + error.message);
+            });
+
+            // Remove from scheduled list
+            removeMessage(messageData.id);
+        }
+
+        function updateMessageList() {
+            const messageList = document.getElementById('messageList');
+            messageList.innerHTML = '';
+
+            scheduledMessages.forEach(msg => {
+                const scheduledTime = new Date(msg.scheduledTime);
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'scheduled-msg';
+                msgDiv.innerHTML = `
+                    <p><strong>To:</strong> ${msg.phone}</p>
+                    <p><strong>Message:</strong> ${msg.message}</p>
+                    <p><strong>Scheduled for:</strong> ${scheduledTime.toLocaleString()}</p>
+                    <button class="delete-btn" onclick="removeMessage(${msg.id})">Cancel</button>
+                `;
+                messageList.appendChild(msgDiv);
+            });
+        }
+
+        function removeMessage(id) {
+            scheduledMessages = scheduledMessages.filter(msg => msg.id !== id);
+            localStorage.setItem('scheduledMessages', JSON.stringify(scheduledMessages));
+            updateMessageList();
+        }
+
+        // Load scheduled messages on page load
+        window.onload = function() {
+            updateMessageList();
+            // Set timeouts for existing scheduled messages
+            scheduledMessages.forEach(setMessageTimeout);
+        };
+    </script>
+</body>
+</html>

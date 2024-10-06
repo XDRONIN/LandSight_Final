@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Scheduler</title>
+</head>
+<body>
+    <h2>Schedule an Email Notification</h2>
+    
+    <form action="/schedule-email" method="POST">
+        <label for="email">Email Address:</label>
+        <input type="email" id="email" name="email" required>
+        <br><br>
+
+        <label for="scheduleTime">Time to Schedule:</label>
+        <input type="datetime-local" id="scheduleTime" name="scheduleTime" required>
+        <br><br>
+
+        <label for="notifyHours">Notify me before:</label>
+        <select id="notifyHours" name="notifyHours">
+            <option value="1">1 hour</option>
+            <option value="2">2 hours</option>
+            <option value="3">3 hours</option>
+            <option value="4">4 hours</option>
+            <option value="5">5 hours</option>
+        </select>
+        <br><br>
+
+        <button type="submit">Schedule Email</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landsight- Features</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f4f4f4;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        header {
+            background-color: #1a6dc1;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        header p {
+            font-size: 16px;
+        }
+
+        /* Section Styles */
+        .features {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .features h2 {
+            font-size: 36px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .features p {
+            font-size: 18px;
+            color: #555;
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        .feature-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .feature-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .feature-box img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+        }
+
+        .feature-box h3 {
+            font-size: 24px;
+            margin: 20px 0 10px;
+            color: #001f3f;
+        }
+
+        .feature-box p {
+            font-size: 16px;
+            color: #666;
+        }
+
+        
+
+        /* Notification Section */
+        .notification-section {
+            padding: 40px;
+            background-color: #0074D9;
+            color: white;
+            text-align: center;
+        }
+
+        .notification-section h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .notification-section p {
+            font-size: 18px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #001f3f;
+            color: white;
+            text-align: center;
+            padding: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1>LANDSIGHT</h1>
+        <p>Using TLE Coordinates and Near Real-Time Data Retrieval</p>
+    </header>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2>Key Features of Our System</h2>
+        <p>Explore the power of satellite tracking with Landsat 9, TLE coordinates, real-time data retrieval, and more.</p>
+
+        <div class="feature-grid">
+            <div class="feature-box">
+                <img src="satellite.png" alt="TLE Coordinates Icon">
+                <h3>TLE Coordinates</h3>
+                <p>Our system uses precise TLE coordinates to track the position of Landsat 9 and predict its orbit.</p>
+            </div>
+
+            <div class="feature-box">
+                <img src="real time.png" alt="Real-Time Data Icon">
+                <h3>Near Real-Time Data</h3>
+                <p>Access Landsat's near real-time imagery and data, ensuring accurate monitoring of Earth's surface.</p>
+            </div>
+
+            <div class="feature-box">
+                <img src="notification_8450308.png" alt="Notification Icon">
+                <h3>Upcoming Alerts</h3>
+                <p>Receive notifications when Landsat 9 is about to pass over your selected location, giving you timely updates.</p>
+            </div>
+
+            <div class="feature-box">
+                <img src="circle.png" alt="Map View Icon">
+                <h3>Location Selection</h3>
+                <p>Choose a location via the interactive map, and our system will calculate when Landsat 9 will pass overhead.</p>
+            </div>
+        </div>
+    </section>
+
+   
+    <!-- Notification Section -->
+    <section class="notification-section">
+        <h2>Stay Updated with Notifications</h2>
+        <p>Our notification system alerts you when Landsat 9 is nearby, ensuring you never miss a satellite overpass.</p>
+    </section>
+
+</body>
+</html>
