@@ -198,6 +198,8 @@
       function sendMessage(messageData) {
         // Make a request to your server to send the SMS
         fetch("http://localhost:3000/send-sms", {
+          // Correct endpoint
+
           method: "POST",
           headers: {
             "Content-Type": "application/json",
