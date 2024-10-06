@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landsat Data Fetch with 3x3 Grid</title>
+    <style>
+      .highlight {
+        text-decoration: underline;
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Landsat Data Fetch</h1>
+
+    <!-- User Input Section -->
+    <label for="coordinates"
+      >Coordinates (lonMin, latMin, lonMax, latMax):</label
+    >
+    <input type="text" id="coordinates" placeholder="Generate Grid" />
+
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" value="2024-10-01" />
+
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" value="2024-10-06" />
+
+    <button id="fetchButton">Fetch Data</button>
+    <button id="generateGridButton">Generate 3x3 Grid</button>
+
+    <div id="output"></div>
+
+    <script>
+      const pixelLongitude = 77.382; // Target pixel longitude
+      const pixelLatitude = 12.42; // Target pixel latitude
+
+      // Function to check if a point is inside a bounding box
+      function isPointInsideBoundingBox(lon, lat, boundingBox) {
+        if (!boundingBox || boundingBox.length !== 4) {
+          console.error("Invalid bounding box:", boundingBox);
+          return false;
+        }
+
+        const [lonMin, latMin, lonMax, latMax] = boundingBox;
+        console.log(`Checking point (${lon}, ${lat}) against bounding box:`, {
+          lonMin,
+          latMin,
+          lonMax,
+          latMax,
+        });
+
+        return lon >= lonMin && lon <= lonMax && lat >= latMin && lat <= latMax;
+      }
+
+      // Function to calculate a 3x3 grid's coordinates
+      function calculate3x3Grid(lon, lat, stepLon = 0.1, stepLat = 0.1) {
+        const lonMin = lon - stepLon;
+        const lonMax = lon + stepLon;
+        const latMin = lat - stepLat;
+        const latMax = lat + stepLat;
+
+        return [lonMin, latMin, lonMax, latMax];
+      }
+
+      // Function to fetch Landsat data
+      async function fetchLandsatData(coordinates, startDate, endDate) {
+        const [lonMin, latMin, lonMax, latMax] = coordinates;
+        const baseUrl = "https://cmr.earthdata.nasa.gov/search/granules.json";
+        const pageSize = 50;
+        let page = 1;
+        let allResults = [];
+
+        const params = new URLSearchParams({
+          collection_concept_id: "C2021957657-LPCLOUD",
+          temporal: `${startDate}T00:00:00Z,${endDate}T23:59:59Z`,
+          bounding_box: `${lonMin},${latMin},${lonMax},${latMax}`,
+          page_size: pageSize,
+          page_num: page,
+        });
+
+        async function fetchPage() {
+          const url = `${baseUrl}?${params.toString()}`;
+          try {
+            const response = await fetch(url);
+            if (!response.ok) {
+              const errorBody = await response.text();
+              console.error("Error response body:", errorBody);
+              throw new Error(
+                `HTTP error! Status: ${response.status}, Body: ${errorBody}`
+              );
+            }
+            const data = await response.json();
+            return data;
+          } catch (error) {
+            console.error("Error fetching data:", error);
+            return null;
+          }
+        }
+
+        let hasMorePages = true;
+        while (hasMorePages) {
+          const data = await fetchPage();
+          if (
+            !data ||
+            !data.feed ||
+            !data.feed.entry ||
+            data.feed.entry.length === 0
+          ) {
+            hasMorePages = false;
+          } else {
+            allResults = allResults.concat(data.feed.entry);
+            if (data.feed.entry.length < pageSize) {
+              hasMorePages = false;
+            } else {
+              page++;
+              params.set("page_num", page);
+            }
+          }
+        }
+
+        const processedResults = allResults.map((entry) => {
+          const boundingPolygon = entry.polygons?.[0]?.[0]?.split(" ") || [];
+          const latitude = boundingPolygon[1] || "N/A";
+          const longitude = boundingPolygon[0] || "N/A";
+          const tifLinks =
+            entry.links
+              ?.filter(
+                (link) =>
+                  link.href &&
+                  link.href.toLowerCase().startsWith("http") &&
+                  link.href.toLowerCase().endsWith(".tif")
+              )
+              .map((link) => link.href) || [];
+          const cloudCover = entry.cloud_cover || "N/A";
+          const timeStart = entry.time_start || "N/A";
+          const timeEnd = entry.time_end || "N/A";
+
+          // Parse bounding box correctly
+          const boundingBox = entry.bounding_box?.[0]?.split(",").map(Number);
+          console.log("Bounding box for entry:", boundingBox);
+
+          return {
+            id: entry.id,
+            title: entry.title,
+            boundingBox: boundingBox || [],
+            coordinate: { latitude, longitude },
+            time_start: timeStart,
+            time_end: timeEnd,
+            cloudCover: cloudCover,
+            tifLinks: tifLinks,
+          };
+        });
+
+        return processedResults;
+      }
+
+      // Fetch data on button click
+      document.getElementById("fetchButton").addEventListener("click", () => {
+        const coordsInput = document
+          .getElementById("coordinates")
+          .value.split(",")
+          .map(Number);
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+
+        fetchLandsatData(coordsInput, startDate, endDate)
+          .then((results) => {
+            const outputDiv = document.getElementById("output");
+            outputDiv.innerHTML = `Processed ${results.length} scenes.<br><br>`;
+            results.forEach((result, index) => {
+              const isTargetScene = isPointInsideBoundingBox(
+                pixelLongitude,
+                pixelLatitude,
+                result.boundingBox
+              );
+
+              const tifLinksHtml = result.tifLinks
+                .map(
+                  (link) =>
+                    `<a href="${link}" ${
+                      isTargetScene ? 'class="highlight"' : ""
+                    }>${link}</a><br>`
+                )
+                .join("");
+
+              outputDiv.innerHTML += `
+                <b>Scene ${index + 1}:</b><br>
+                ID: ${result.id}<br>
+                Title: ${result.title}<br>
+                Coordinate: Latitude: ${
+                  result.coordinate.latitude
+                }, Longitude: ${result.coordinate.longitude}<br>
+                Cloud Cover: ${result.cloudCover}<br>
+                Acquisition Start Date: ${result.time_start}<br>
+                Acquisition End Date: ${result.time_end}<br>
+                TIF Links:<br> ${tifLinksHtml}
+                <br>
+              `;
+            });
+          })
+          .catch((error) => console.error("Error:", error));
+      });
+
+      // Generate the 3x3 grid based on the pixelLongitude and pixelLatitude
+      document
+        .getElementById("generateGridButton")
+        .addEventListener("click", () => {
+          const boundingBox = calculate3x3Grid(pixelLongitude, pixelLatitude);
+
+          // Update the coordinates input field with the new bounding box
+          document.getElementById("coordinates").value = boundingBox.join(", ");
+
+          console.log("Generated 3x3 Grid Bounding Box:", boundingBox);
+        });
+    </script>
+  </body>
+</html>
