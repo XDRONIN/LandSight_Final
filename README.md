@@ -36,7 +36,7 @@ A web application that tracks the live coordinates of the Landsat 9 satellite an
 
 2. **Track Satellite**:
 
-   - View Landsat 9's live position and predict its flyover times.
+   - Using Landsat 9's live position and predict its flyover times.
 
 3. **Set Notification**:
 
