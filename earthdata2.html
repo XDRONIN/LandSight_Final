@@ -75,6 +75,66 @@
       a:hover {
         color: #000076;
       }
+      .spinner {
+        display: none;
+        margin-top: 19%;
+        width: 70.4px;
+        height: 70.4px;
+        --clr: #000076;
+        --clr-alpha: rgba(159, 247, 218, 0.1);
+        animation: spinner 1.6s infinite ease;
+        transform-style: preserve-3d;
+      }
+
+      .spinner > div {
+        background-color: var(--clr-alpha);
+        height: 100%;
+        position: absolute;
+        width: 100%;
+        border: 3.5px solid var(--clr);
+      }
+
+      .spinner div:nth-of-type(1) {
+        transform: translateZ(-35.2px) rotateY(180deg);
+      }
+
+      .spinner div:nth-of-type(2) {
+        transform: rotateY(-270deg) translateX(50%);
+        transform-origin: top right;
+      }
+
+      .spinner div:nth-of-type(3) {
+        transform: rotateY(270deg) translateX(-50%);
+        transform-origin: center left;
+      }
+
+      .spinner div:nth-of-type(4) {
+        transform: rotateX(90deg) translateY(-50%);
+        transform-origin: top center;
+      }
+
+      .spinner div:nth-of-type(5) {
+        transform: rotateX(-90deg) translateY(50%);
+        transform-origin: bottom center;
+      }
+
+      .spinner div:nth-of-type(6) {
+        transform: translateZ(35.2px);
+      }
+
+      @keyframes spinner {
+        0% {
+          transform: rotate(45deg) rotateX(-25deg) rotateY(25deg);
+        }
+
+        50% {
+          transform: rotate(45deg) rotateX(-385deg) rotateY(25deg);
+        }
+
+        100% {
+          transform: rotate(45deg) rotateX(-385deg) rotateY(385deg);
+        }
+      }
     </style>
   </head>
   <body>
@@ -98,10 +158,19 @@
         <input type="date" id="endDate" value="2024-10-06" />
       </div>
 
-      <button id="generateGridButton">Generate 3x3 Grid</button>
       <button id="fetchButton">Fetch Data</button>
 
       <div id="output-container">
+        <center>
+          <div class="spinner" id="spinner">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        </center>
         <div id="output"></div>
       </div>
     </div>
@@ -126,7 +195,33 @@
         "Longitude:",
         pixelLongitude
       );
+      // Function to calculate a 3x3 grid's coordinates
+      function calculate3x3Grid(lon, lat, stepLon = 0.1, stepLat = 0.1) {
+        const lonMin = lon - stepLon;
+        const lonMax = lon + stepLon;
+        const latMin = lat - stepLat;
+        const latMax = lat + stepLat;
 
+        return [lonMin, latMin, lonMax, latMax];
+      }
+      //set Grids in the input field
+      function setGrids() {
+        const boundingBox = calculate3x3Grid(pixelLongitude, pixelLatitude);
+
+        // Update the coordinates input field with the new bounding box
+        document.getElementById("coordinates").value = boundingBox.join(", ");
+
+        console.log("Generated 3x3 Grid Bounding Box:", boundingBox);
+      }
+      setGrids();
+      //Loading functions
+      const loader = document.getElementById("spinner");
+      function showLoader() {
+        loader.style.display = "flex";
+      }
+      function hideLoader() {
+        loader.style.display = "none";
+      }
       // Function to check if a point is inside a bounding box
       function isPointInsideBoundingBox(lon, lat, boundingBox) {
         if (!boundingBox || boundingBox.length !== 4) {
@@ -143,16 +238,6 @@
         });
 
         return lon >= lonMin && lon <= lonMax && lat >= latMin && lat <= latMax;
-      }
-
-      // Function to calculate a 3x3 grid's coordinates
-      function calculate3x3Grid(lon, lat, stepLon = 0.1, stepLat = 0.1) {
-        const lonMin = lon - stepLon;
-        const lonMax = lon + stepLon;
-        const latMin = lat - stepLat;
-        const latMax = lat + stepLat;
-
-        return [lonMin, latMin, lonMax, latMax];
       }
 
       // Function to fetch Landsat data
@@ -249,16 +334,22 @@
 
       // Fetch data on button click
       document.getElementById("fetchButton").addEventListener("click", () => {
+        const outputDiv = document.getElementById("output");
+
+        outputDiv.innerHTML = "";
+        showLoader();
+
         const coordsInput = document
           .getElementById("coordinates")
           .value.split(",")
           .map(Number);
+
         const startDate = document.getElementById("startDate").value;
         const endDate = document.getElementById("endDate").value;
 
         fetchLandsatData(coordsInput, startDate, endDate)
           .then((results) => {
-            const outputDiv = document.getElementById("output");
+            hideLoader();
             outputDiv.innerHTML = `Processed ${results.length} scenes.<br><br>`;
             results.forEach((result, index) => {
               const isTargetScene = isPointInsideBoundingBox(
@@ -295,16 +386,11 @@
       });
 
       // Generate the 3x3 grid based on the pixelLongitude and pixelLatitude
-      document
-        .getElementById("generateGridButton")
-        .addEventListener("click", () => {
-          const boundingBox = calculate3x3Grid(pixelLongitude, pixelLatitude);
+      //document
+      //.getElementById("generateGridButton")
+      //.addEventListener("click", () => {
 
-          // Update the coordinates input field with the new bounding box
-          document.getElementById("coordinates").value = boundingBox.join(", ");
-
-          console.log("Generated 3x3 Grid Bounding Box:", boundingBox);
-        });
+      //});
     </script>
   </body>
 </html>
