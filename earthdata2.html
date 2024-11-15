@@ -250,6 +250,8 @@
 
         const params = new URLSearchParams({
           collection_concept_id: "C2021957657-LPCLOUD",
+          datasetId:
+            "HLS Landsat Operational Land Imager Surface Reflectance and TOA Brightness Daily Global 30m v2.0",
           temporal: `${startDate}T00:00:00Z,${endDate}T23:59:59Z`,
           bounding_box: `${lonMin},${latMin},${lonMax},${latMax}`,
           page_size: pageSize,
@@ -309,23 +311,33 @@
                   link.href.toLowerCase().endsWith(".tif")
               )
               .map((link) => link.href) || [];
+          const jpgLinks =
+            entry.links
+              ?.filter(
+                (link) =>
+                  link.href &&
+                  link.href.toLowerCase().startsWith("http") &&
+                  link.href.toLowerCase().endsWith(".jpg")
+              )
+              .map((link) => link.href) || [];
           const cloudCover = entry.cloud_cover || "N/A";
           const timeStart = entry.time_start || "N/A";
           const timeEnd = entry.time_end || "N/A";
 
-          // Parse bounding box correctly
-          const boundingBox = entry.bounding_box?.[0]?.split(",").map(Number);
-          console.log("Bounding box for entry:", boundingBox);
+          // // Parse bounding box correctly
+          // const boundingBox = entry.bounding_box?.[0]?.split(",").map(Number);
+          // console.log("Bounding box for entry:", boundingBox);
 
           return {
             id: entry.id,
             title: entry.title,
-            boundingBox: boundingBox || [],
+            // boundingBox: boundingBox || [],
             coordinate: { latitude, longitude },
             time_start: timeStart,
             time_end: timeEnd,
             cloudCover: cloudCover,
             tifLinks: tifLinks,
+            jpgLinks: jpgLinks,
           };
         });
 
@@ -350,47 +362,56 @@
         fetchLandsatData(coordsInput, startDate, endDate)
           .then((results) => {
             hideLoader();
-            outputDiv.innerHTML = `Processed ${results.length} scenes.<br><br>`;
+            if (results.length === 0) {
+              outputDiv.innerHTML = "No results found.";
+              return;
+            }
+
+            outputDiv.innerHTML = `Fetched ${results.length} scenes.<br><br>`;
+
             results.forEach((result, index) => {
-              const isTargetScene = isPointInsideBoundingBox(
-                pixelLongitude,
-                pixelLatitude,
-                result.boundingBox
-              );
+              // All Links including TIF and others
+              const jpgLinksHtml =
+                result.jpgLinks
+                  .map(
+                    (link) =>
+                      `<a href="${link}"  class="highlight" target="_blank">${link}</a><br>`
+                  )
+                  .join("") || "No links available.";
 
               const tifLinksHtml = result.tifLinks
                 .map(
                   (link) =>
-                    `<a href="${link}" ${
-                      isTargetScene ? 'class="highlight"' : ""
-                    }>${link}</a><br>`
+                    `<a href="${link}" class="highlight" target="_blank">${link}</a><br>`
                 )
                 .join("");
 
               outputDiv.innerHTML += `
-                <b>Scene ${index + 1}:</b><br>
-                ID: ${result.id}<br>
-                Title: ${result.title}<br>
-                Coordinate: Latitude: ${
-                  result.coordinate.latitude
-                }, Longitude: ${result.coordinate.longitude}<br>
-                Cloud Cover: ${result.cloudCover}<br>
-                Acquisition Start Date: ${result.time_start}<br>
-                Acquisition End Date: ${result.time_end}<br>
-                TIF Links:<br> ${tifLinksHtml}
-                <br>
-              `;
+          <div style="border: 1px solid #ccc; margin-bottom: 10px; padding: 10px;">
+            <b>Scene ${index + 1}:</b><br>
+            <b>ID:</b> ${result.id}<br>
+            <b>Title:</b> ${result.title}<br>
+            <b>Coordinate:</b> Latitude: ${
+              result.coordinate.latitude
+            }, Longitude: ${result.coordinate.longitude}<br>
+            <b>Cloud Cover:</b> ${result.cloudCover}<br>
+            <b>Acquisition Start Date:</b> ${result.time_start}<br>
+            <b>Acquisition End Date:</b> ${result.time_end}<br>
+            
+            
+            <b>Color Preview(jpg):</b><br> ${jpgLinksHtml}<br><br>
+            <b>TIF Links:</b><br> ${tifLinksHtml}
+            
+          </div>
+        `;
             });
           })
-          .catch((error) => console.error("Error:", error));
+          .catch((error) => {
+            hideLoader();
+            console.error("Error:", error);
+            outputDiv.innerHTML = "An error occurred while fetching data.";
+          });
       });
-
-      // Generate the 3x3 grid based on the pixelLongitude and pixelLatitude
-      //document
-      //.getElementById("generateGridButton")
-      //.addEventListener("click", () => {
-
-      //});
     </script>
   </body>
 </html>
